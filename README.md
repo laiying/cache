@@ -41,8 +41,8 @@ android {
 dependencies {
     // 替换成最新版本, 需要注意的是api
     // 要与compiler匹配使用，均使用最新版可以保证兼容
-    api 'com.strod.cache:cache-api:x.x.x'
-    annotationProcessor 'com.strod.cache:cache-compiler:x.x.x'
+    api 'com.github.laiying.cache:cache-api:1.0.0'
+    annotationProcessor 'com.github.laiying.cache:cache-compiler:1.0.0'
     ...
 }
 
