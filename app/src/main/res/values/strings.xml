@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Cache</string>
+    <string name="extends_base">基类绑定</string>
+    <string name="extends_base_no_impl">基类绑定无注解</string>
+    <string name="model_sample">模块中使用</string>
+    <string name="update_value">改变相关值，退出这个页面重进再看log</string>
+</resources>
