@@ -37,5 +37,11 @@ public class CacheConsts {
 
     //api pkg
     public static final String API_PKG = "com.strod.cache.api";
+    public static final String API_CACHE_MANAGER = "CacheManager";
+    public static final String API_GETINSTANCE = "getInstance";
+    public static final String CACHE_BINDER = "CacheBinder";
+    public static final String CACHE_BINDER_METHOD = "saveCache";
+    public static final String CACHE_READ = "read";
+    public static final String CACHE_WRITE = "write";
 
 }

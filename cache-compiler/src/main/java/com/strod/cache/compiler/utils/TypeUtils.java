@@ -86,22 +86,22 @@ public class TypeUtils {
                 } else {    // For others
                     //erasure return List for List<E>
                     //List
-                    TypeMirror erasedType = types.erasure(typeMirror);
-                    logger.info(String.format("listType:%s", listType.toString()));
-                    logger.info(String.format("erasedType:%s", erasedType.toString()));
-
-                    //java.util.List<com.agile.library.model.User>
-                    boolean isListType =  types.isSameType(erasedType, listType);
-                    boolean contains =  types.contains(erasedType, listType);
-                    boolean isSubtype =  types.isSubtype(erasedType, listType);
-                    boolean isList =  types.isAssignable(erasedType, listType);/* List is Assingnble List<E> */
-                    logger.info(String.format("isListType:%s, contains:%s , isSubtype:%s , isAssignable:%s", isListType,contains,isSubtype,isList));
-                    if (isListType){
-                        return CustomTypeKind.LIST.ordinal();
-                    }
-                    if (isSubtype){
-                        return CustomTypeKind.LIST_SUB.ordinal();
-                    }
+//                    TypeMirror erasedType = types.erasure(typeMirror);
+//                    logger.info(String.format("listType:%s", listType.toString()));
+//                    logger.info(String.format("erasedType:%s", erasedType.toString()));
+//
+//                    //java.util.List<com.agile.library.model.User>
+//                    boolean isListType =  types.isSameType(erasedType, listType);
+//                    boolean contains =  types.contains(erasedType, listType);
+//                    boolean isSubtype =  types.isSubtype(erasedType, listType);
+//                    boolean isList =  types.isAssignable(erasedType, listType);/* List is Assingnble List<E> */
+//                    logger.info(String.format("isListType:%s, contains:%s , isSubtype:%s , isAssignable:%s", isListType,contains,isSubtype,isList));
+//                    if (isListType){
+//                        return CustomTypeKind.LIST.ordinal();
+//                    }
+//                    if (isSubtype){
+//                        return CustomTypeKind.LIST_SUB.ordinal();
+//                    }
 
                     return CustomTypeKind.OBJECT.ordinal();
                 }
@@ -131,7 +131,7 @@ public class TypeUtils {
                 TypeMirror erasedType = types.erasure(typeMirror);
                 logger.info(String.format("erasedType:%s", erasedType.toString()));
                 boolean isList =  types.isAssignable(erasedType, listType);
-                if (isList){
+//                if (isList){
                     javax.lang.model.type.TypeKind typeKind = typeMirror.getKind();
                     if (typeKind == javax.lang.model.type.TypeKind.DECLARED) {
                         DeclaredType declaredType = (DeclaredType) typeMirror;
@@ -142,7 +142,7 @@ public class TypeUtils {
                         }
                         return mirrors;
                     }
-                }
+//                }
 
                 return null;
         }

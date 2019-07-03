@@ -2,13 +2,17 @@ package com.strod.library;
 
 import android.app.Application;
 
+import com.strod.cache.annotation.Cacheable;
 import com.strod.cache.api.CacheInject;
-import com.strod.cache.api.DiskCacheManager;
-import com.strod.cache.api.SharePrefersManager;
+import com.strod.cache.api.CacheManager;
+import com.strod.library.model.Response;
+import com.strod.library.model.TestModel;
 import com.strod.library.model.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by laiying on 2019/3/18.
@@ -26,9 +30,11 @@ public class BaseApplication extends Application {
         if (BuildConfig.DEBUG){
             CacheInject.setDebug(true);
         }
-        //init cache module
-        DiskCacheManager.getInstance().init(this);
-        SharePrefersManager.getInstance().init(this, "Cache");
+        //init cache
+        new CacheManager.Builder()
+                .with(this)
+                .cacheDirName("Cache")
+                .build();
 
         initTestData();
     }
@@ -42,43 +48,80 @@ public class BaseApplication extends Application {
         String diskName = "Disk cache demo";
 
         //int
-        SharePrefersManager.getInstance().putInt("age", age);
-        DiskCacheManager.getInstance().writeCache("diskAge", age);
-
-        //String
-        SharePrefersManager.getInstance().putString("name", name);
-        DiskCacheManager.getInstance().writeCache("diskName", diskName);
-
-        //long
-        SharePrefersManager.getInstance().putLong("long", 99999L);
-        DiskCacheManager.getInstance().writeCache("diskLong", 100000L);
+        CacheManager.getInstance().putInt(Cacheable.CACHETYPE.SHARE_PREFS,"age", age);
+        CacheManager.getInstance().putInt(Cacheable.CACHETYPE.DISK,"diskAge", age);
 
         //boolean
-        SharePrefersManager.getInstance().putBoolean("boolean", true);
-        DiskCacheManager.getInstance().writeCache("diskBoolean", true);
+        CacheManager.getInstance().putBoolean(Cacheable.CACHETYPE.SHARE_PREFS,"boolean", true);
+        CacheManager.getInstance().putBoolean(Cacheable.CACHETYPE.DISK,"diskBoolean", true);
+
+        //long
+        CacheManager.getInstance().putLong(Cacheable.CACHETYPE.SHARE_PREFS,"long", 99999L);
+        CacheManager.getInstance().putLong(Cacheable.CACHETYPE.DISK,"diskLong", 100000L);
 
         //float
-        SharePrefersManager.getInstance().putFloat("float", 1.0f);
-        DiskCacheManager.getInstance().writeCache("diskFloat", 1.5f);
+        CacheManager.getInstance().putFloat(Cacheable.CACHETYPE.SHARE_PREFS,"float", 1.0f);
+        CacheManager.getInstance().putFloat(Cacheable.CACHETYPE.DISK,"diskFloat", 1.5f);
 
         //double
-        SharePrefersManager.getInstance().putDouble("double", 2.0d);
-        DiskCacheManager.getInstance().writeCache("diskDouble", 2.0d);
+        CacheManager.getInstance().putDouble(Cacheable.CACHETYPE.SHARE_PREFS,"double", 2.0d);
+        CacheManager.getInstance().putDouble(Cacheable.CACHETYPE.DISK,"diskDouble", 3.0d);
 
+        //String
+        CacheManager.getInstance().putString(Cacheable.CACHETYPE.SHARE_PREFS,"name", name);
+        CacheManager.getInstance().putString(Cacheable.CACHETYPE.DISK,"diskName", diskName);
+
+        //Object implements Parcelable
         User user = new User();
         user.setAge(age);
         user.setName(name);
-        SharePrefersManager.getInstance().put("user", user);
-
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"user", user);
 
         user.setName(diskName);
-        DiskCacheManager.getInstance().writeCache("diskUser", user);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"diskUser", user);
 
+        //Object
+        TestModel testModel = new TestModel();
+        testModel.setName("TestModel");
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"testModel", testModel);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"diskTestModel", testModel);
+
+        //Object<T>
+        Response<User> response1 = new Response<User>(1, "sucess", user);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"mResponseUser", response1);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"mDiskResponseUser", response1);
+
+        //List
         List<User> userList = new ArrayList<>();
         userList.add(user);
         userList.add(new User("hello", 18));
-        SharePrefersManager.getInstance().putList("mUserList", userList);
-        DiskCacheManager.getInstance().writeCache("mDiskUserList", userList);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"mUserList", userList);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"mDiskUserList", userList);
+
+        //List<Object<T>>
+        List<Response<User>> responseList = new ArrayList<>();
+        responseList.add(response1);
+        responseList.add(response1);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"mResponseUserList", responseList);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"mDiskResponseUserList", responseList);
+
+        //Map<K,V>
+        Map<String, User> mUserMap = new HashMap<>();
+        mUserMap.put("user1", user);
+        mUserMap.put("user2", new User("map", 18));
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"mUserMap", mUserMap);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"mDiskUserMap", mUserMap);
+
+        //Map<K, List<V>>
+        List<User> userList2 = new ArrayList<>();
+        userList2.add(user);
+        userList2.add(new User("userList2", 18));
+        Map<String, List<User>> mUserMapList = new HashMap<>();
+        mUserMapList.put("userList1", userList);
+        mUserMapList.put("userList2", userList2);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.SHARE_PREFS,"mUserMapList", mUserMapList);
+        CacheManager.getInstance().put(Cacheable.CACHETYPE.DISK,"mDiskUserMapList", mUserMapList);
+
     }
 
     public static Application getApplication(){

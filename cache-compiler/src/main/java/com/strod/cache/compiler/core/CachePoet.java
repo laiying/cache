@@ -7,6 +7,7 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeSpec;
+import com.strod.cache.annotation.Cacheable;
 import com.strod.cache.compiler.utils.CacheConsts;
 
 import java.io.IOException;
@@ -74,7 +75,7 @@ public abstract class CachePoet {
             bTypeSpec.addSuperinterface(getParent());
         }
         //接口
-        bTypeSpec.addSuperinterface(ParameterizedTypeName.get(ClassName.get(CacheConsts.API_PKG, "CacheBinder"), ClassName.get(mGeneratePackageName,mGenerateComplexClassName)));
+        bTypeSpec.addSuperinterface(ParameterizedTypeName.get(ClassName.get(CacheConsts.API_PKG, CacheConsts.CACHE_BINDER), ClassName.get(mGeneratePackageName,mGenerateComplexClassName)));
 
         CodeBlock staticBlock = getStaticBlock();
         if (null != staticBlock) {
@@ -87,7 +88,11 @@ public abstract class CachePoet {
         for (MethodSpec methodSpec : getMethods()) {
             bTypeSpec.addMethod(methodSpec);
         }
-        JavaFile javaFile = JavaFile.builder(mGeneratePackageName, bTypeSpec.build()).addFileComment(FILE_HEADER).
+
+        JavaFile javaFile = JavaFile.builder(mGeneratePackageName, bTypeSpec.build())
+                .addStaticImport(Cacheable.CACHETYPE.SHARE_PREFS)
+                .addStaticImport(Cacheable.CACHETYPE.DISK)
+                .addFileComment(FILE_HEADER).
                 build();
         try {
             javaFile.writeTo(mFiler);
@@ -142,19 +147,4 @@ public abstract class CachePoet {
         return TypeSpec.Kind.CLASS;
     }
 
-    protected String convertType(String type) {
-        String fullType = null;
-        if ("int".equals(type)) {
-            fullType = "java.lang.Integer";
-        } else if ("long".equals(type)) {
-            fullType = "java.lang.Long";
-        } else if ("float".equals(type)) {
-            fullType = "java.lang.Float";
-        } else if ("boolean".equals(type)) {
-            fullType = "java.lang.Boolean";
-        }else {
-            fullType = type;
-        }
-        return fullType;
-    }
 }

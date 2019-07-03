@@ -7,6 +7,8 @@ dependencies {
     implementation 'com.squareup:javapoet:1.10.0'
     implementation 'com.google.auto.service:auto-service:1.0-rc3'
     implementation project(':cache-annotation')
+
+    api 'com.google.code.gson:gson:2.8.1'
 }
 
 sourceCompatibility = "7"

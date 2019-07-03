@@ -26,7 +26,7 @@ public final class CacheInject {
     }
 
     private static final String TAG = "CacheInject";
-    private static boolean debug = true;
+    private static boolean debug = false;
 
     static final Map<Class<?>, Constructor<? extends CacheBinder>> BINDINGS = new LinkedHashMap<>();
 

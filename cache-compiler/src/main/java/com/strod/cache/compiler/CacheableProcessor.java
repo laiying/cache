@@ -5,7 +5,6 @@ import com.strod.cache.annotation.Cacheable;
 import com.strod.cache.compiler.core.CacheMeta;
 import com.strod.cache.compiler.core.CachePoetImpl;
 import com.strod.cache.compiler.core.CacheVariable;
-import com.strod.cache.compiler.enums.CustomTypeKind;
 import com.strod.cache.compiler.utils.Logger;
 import com.strod.cache.compiler.utils.TypeUtils;
 
@@ -227,13 +226,7 @@ public class CacheableProcessor extends AbstractProcessor {
                     cacheVariable.setName(name);
                     cacheVariable.setTypeMirror(typeMirror);
                     cacheVariable.setTypeKind(typeUtils.typeExchange(variableElement));
-                    if (cacheVariable.getTypeKind() == CustomTypeKind.LIST.ordinal()){
-                        cacheVariable.setTypeArgs(typeUtils.typeArguments(variableElement));
-                    }else if (cacheVariable.getTypeKind() == CustomTypeKind.LIST_SUB.ordinal()){
-                        logger.error(String.format("%s.%s.%s must be List Type", pkName, claName,name));
-                        logger.info("--------------------");
-                        continue;
-                    }
+                    cacheVariable.setTypeArgs(typeUtils.typeArguments(variableElement));
 
                     cacheMeta.addCacheVariable(cacheVariable);
 

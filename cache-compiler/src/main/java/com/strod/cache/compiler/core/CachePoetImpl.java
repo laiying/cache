@@ -1,17 +1,20 @@
 package com.strod.cache.compiler.core;
 
+import com.google.gson.reflect.TypeToken;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
-import com.strod.cache.annotation.Cacheable;
 import com.strod.cache.compiler.enums.CustomTypeKind;
 import com.strod.cache.compiler.utils.CacheConsts;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.type.TypeMirror;
 
 /**
  * Created by laiying on 2019/3/28.
@@ -20,9 +23,6 @@ public class CachePoetImpl extends CachePoet{
 
 
     private CacheMeta cacheMeta;
-
-    private static String DISKCACHE = CacheConsts.API_PKG + ".DiskCacheManager.getInstance()";
-    private static String SHAREPREFERS = CacheConsts.API_PKG + ".SharePrefersManager.getInstance()";
 
     public CachePoetImpl(Filer filer,CacheMeta cacheMeta) {
         super(filer, cacheMeta.getPkgName(), cacheMeta.getClsName());
@@ -35,6 +35,13 @@ public class CachePoetImpl extends CachePoet{
 //        return ClassName.get("com.agile.cache", "CacheBinder<"+cacheMeta.getClsName() +">");
 //    }
 
+
+    @Override
+    protected List<FieldSpec> getFields() {
+
+        return super.getFields();
+    }
+
     @Override
     protected List<MethodSpec> getMethods() {
         List<MethodSpec> methodSpecs = new ArrayList<>();
@@ -46,46 +53,23 @@ public class CachePoetImpl extends CachePoet{
             MethodSpec writeCache = null;
             int typeKind = cacheVariable.getTypeKind();
 
-            if (cacheVariable.getCacheType() == Cacheable.CACHETYPE.DISK){
-                //read
-                MethodSpec.Builder builder = MethodSpec.methodBuilder("read"+ cacheVariable.getName())
-                        .addModifiers(Modifier.PUBLIC)
-                        .returns(TypeName.VOID)
-                        .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
 
-                buildDiskReadStatetement(typeKind, builder, cacheVariable);
-                readCache = builder.build();
+            //read
+            MethodSpec.Builder readBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_READ+ cacheVariable.getName())
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(TypeName.VOID)
+                    .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
+//                        .addStatement("android.util.Log.d($S, $S)", mGenerateComplexClassName+ "$$CACHE", CacheConsts.CACHE_READ+ cacheVariable.getName());
+            buildReadStatetement(typeKind, readBuilder, cacheVariable);
+            readCache = readBuilder.build();
 
-                //write
-                writeCache = MethodSpec.methodBuilder("write"+ cacheVariable.getName())
-                        .addModifiers(Modifier.PUBLIC)
-                        .returns(TypeName.VOID)
-                        .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase())
-                        .addStatement("$L.writeCache($S, $L.$L)",
-                                DISKCACHE,
-                                cacheVariable.getKey(),
-                                cacheMeta.getClsName().toLowerCase(),
-                                cacheVariable.getName().toString())
-                        .build();
-            }else {
-                //read
-
-                MethodSpec.Builder readBuilder = MethodSpec.methodBuilder("read"+ cacheVariable.getName())
-                        .addModifiers(Modifier.PUBLIC)
-                        .returns(TypeName.VOID)
-                        .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
-//                        .addStatement("android.util.Log.d($S, $S)", mGenerateComplexClassName+ "$$CACHE", "read"+ cacheVariable.getName());
-                buildSPReadStatetement(typeKind, readBuilder, cacheVariable);
-                readCache = readBuilder.build();
-
-                //write
-                MethodSpec.Builder writeBuilder = MethodSpec.methodBuilder("write"+ cacheVariable.getName())
-                        .addModifiers(Modifier.PUBLIC)
-                        .returns(TypeName.VOID)
-                        .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
-                buildSPWriteStatetement(typeKind, writeBuilder, cacheVariable);
-                writeCache = writeBuilder.build();
-            }
+            //write
+            MethodSpec.Builder writeBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_WRITE+ cacheVariable.getName())
+                    .addModifiers(Modifier.PUBLIC)
+                    .returns(TypeName.VOID)
+                    .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
+            buildWriteStatetement(typeKind, writeBuilder, cacheVariable);
+            writeCache = writeBuilder.build();
 
             readMethodSpecs.add(readCache);
             writeMethodSpecs.add(writeCache);
@@ -95,7 +79,7 @@ public class CachePoetImpl extends CachePoet{
         }
 
         //interface method
-        MethodSpec.Builder saveBuilder = MethodSpec.methodBuilder("saveCache")
+        MethodSpec.Builder saveBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_BINDER_METHOD)
                 .addAnnotation(Override.class)
                 .addModifiers(Modifier.PUBLIC)
                 .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase())
@@ -148,212 +132,173 @@ public class CachePoetImpl extends CachePoet{
         return builder;
     }
 
-    private MethodSpec.Builder buildSPReadStatetement(int type,MethodSpec.Builder builder, CacheVariable cacheVariable){
+    private MethodSpec.Builder buildReadStatetement(int type, MethodSpec.Builder builder, CacheVariable cacheVariable){
         if (builder == null){
             return null;
         }
+        ClassName className = ClassName.get(CacheConsts.API_PKG, CacheConsts.API_CACHE_MANAGER);
         if (type == CustomTypeKind.BOOLEAN.ordinal()) {
-            builder.addStatement("$L.$L = $L.getBoolean($S)",
+            builder.addStatement("$L.$L = $T.$L().getBoolean($L, $S)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey());
         } else if (type == CustomTypeKind.BYTE.ordinal()) {
         } else if (type == CustomTypeKind.SHORT.ordinal()) {
         } else if (type == CustomTypeKind.INT.ordinal()) {
-            builder.addStatement("$L.$L = $L.getInt($S)",
+            builder.addStatement("$L.$L = $T.$L().getInt($L, $S)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey());
         } else if (type == CustomTypeKind.LONG.ordinal()) {
-            builder.addStatement("$L.$L = $L.getLong($S)",
+            builder.addStatement("$L.$L = $T.$L().getLong($L, $S)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey());
         }else if(type == CustomTypeKind.CHAR.ordinal()){
         } else if (type == CustomTypeKind.FLOAT.ordinal()) {
-            builder.addStatement("$L.$L = $L.getFloat($S)",
+            builder.addStatement("$L.$L = $T.$L().getFloat($L, $S)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey());
         } else if(type == CustomTypeKind.DOUBLE.ordinal()){
-            builder.addStatement("$L.$L = $L.getDouble($S)",
+            builder.addStatement("$L.$L = $T.$L().getDouble($L, $S)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey());
         }else if (type == CustomTypeKind.STRING.ordinal()) {
-            builder.addStatement("$L.$L = $L.getString($S)",
+            builder.addStatement("$L.$L = $T.$L().getString($L, $S)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey());
         } else if (type == CustomTypeKind.PARCELABLE.ordinal()) {
-            builder.addStatement("$L.$L = $L.get($S,  $T.class)",
+            builder.addStatement("$L.$L = $T.$L().get($L, $S,  $T.class)",
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString(),
-                    SHAREPREFERS,
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheVariable.getTypeMirror());
         } else if (type == CustomTypeKind.OBJECT.ordinal()) {
-            builder.addStatement("$L.$L = $L.get($S,  $T.class)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    SHAREPREFERS,
-                    cacheVariable.getKey(),
-                    cacheVariable.getTypeMirror());
-        } else if (type == CustomTypeKind.LIST.ordinal()) {
-            builder.addStatement("$L.$L = $L.getList($S,  $T.class)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    SHAREPREFERS,
-                    cacheVariable.getKey(),
-                    cacheVariable.getTypeArgs().get(0));
+            //
+            List<? extends TypeMirror> subTypeMirror = cacheVariable.getTypeArgs();
+            if (subTypeMirror != null && !subTypeMirror.isEmpty()){
+                builder.addStatement("$T type = new $T<$L>(){}.getType();\n$L.$L = $T.$L().get($L, $S,  type)",
+                        Type.class,
+                        TypeToken.class,
+                        cacheVariable.getTypeMirror(),
+                        cacheMeta.getClsName().toLowerCase(),
+                        cacheVariable.getName().toString(),
+                        className,
+                        CacheConsts.API_GETINSTANCE,
+                        cacheVariable.getCacheType(),
+                        cacheVariable.getKey());
+
+            }else {
+                builder.addStatement("$L.$L = $T.$L().get($L, $S,  $T.class)",
+                        cacheMeta.getClsName().toLowerCase(),
+                        cacheVariable.getName().toString(),
+                        className,
+                        CacheConsts.API_GETINSTANCE,
+                        cacheVariable.getCacheType(),
+                        cacheVariable.getKey(),
+                        cacheVariable.getTypeMirror());
+            }
         }
 
         return builder;
     }
 
-    private MethodSpec.Builder buildSPWriteStatetement(int type,MethodSpec.Builder builder, CacheVariable cacheVariable){
+    private MethodSpec.Builder buildWriteStatetement(int type, MethodSpec.Builder builder, CacheVariable cacheVariable){
         if (builder == null){
             return null;
         }
+        ClassName className = ClassName.get(CacheConsts.API_PKG, CacheConsts.API_CACHE_MANAGER);
         if (type == CustomTypeKind.BOOLEAN.ordinal()) {
-            builder.addStatement("$L.putBoolean($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().putBoolean($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         } else if (type == CustomTypeKind.BYTE.ordinal()) {
         } else if (type == CustomTypeKind.SHORT.ordinal()) {
         } else if (type == CustomTypeKind.INT.ordinal()) {
-            builder.addStatement("$L.putInt($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().putInt($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         } else if (type == CustomTypeKind.LONG.ordinal()) {
-            builder.addStatement("$L.putLong($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().putLong($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         }else if(type == CustomTypeKind.CHAR.ordinal()){
         } else if (type == CustomTypeKind.FLOAT.ordinal() ) {
-            builder.addStatement("$L.putFloat($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().putFloat($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         }  else if (type == CustomTypeKind.DOUBLE.ordinal()) {
-            builder.addStatement("$L.putDouble($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().putDouble($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         } else if (type == CustomTypeKind.STRING.ordinal()) {
-            builder.addStatement("$L.putString($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().putString($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         } else if (type == CustomTypeKind.PARCELABLE.ordinal()) {
-            builder.addStatement("$L.put($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().put($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
         } else if (type == CustomTypeKind.OBJECT.ordinal()) {
-            builder.addStatement("$L.put($S,  $L.$L)",
-                    SHAREPREFERS,
+            builder.addStatement("$T.$L().put($L, $S,  $L.$L)",
+                    className,
+                    CacheConsts.API_GETINSTANCE,
+                    cacheVariable.getCacheType(),
                     cacheVariable.getKey(),
                     cacheMeta.getClsName().toLowerCase(),
                     cacheVariable.getName().toString());
-        }else if (type == CustomTypeKind.LIST.ordinal()) {
-            builder.addStatement("$L.putList($S,  $L.$L)",
-                    SHAREPREFERS,
-                    cacheVariable.getKey(),
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString());
-        }
-
-        return builder;
-    }
-
-    /**
-     * DiskCacheManager.getInstance().read()
-     * @param type
-     * @param builder
-     * @param cacheVariable
-     * @return
-     */
-    private MethodSpec.Builder buildDiskReadStatetement(int type,MethodSpec.Builder builder, CacheVariable cacheVariable) {
-        if (builder == null){
-            return null;
-        }
-        if (type == CustomTypeKind.BOOLEAN.ordinal()) {
-            builder.addStatement("$L.$L = $L.readBooleanCache($S)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey());
-        } else if (type == CustomTypeKind.BYTE.ordinal()) {
-        } else if (type == CustomTypeKind.SHORT.ordinal()) {
-        } else if (type == CustomTypeKind.INT.ordinal()) {
-            builder.addStatement("$L.$L = $L.readIntCache($S)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey());
-        } else if (type == CustomTypeKind.LONG.ordinal()) {
-            builder.addStatement("$L.$L = $L.readLongCache($S)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey());
-        }else if(type == CustomTypeKind.CHAR.ordinal()){
-        } else if (type == CustomTypeKind.FLOAT.ordinal()) {
-            builder.addStatement("$L.$L = $L.readFloatCache($S)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey());
-        } else if (type == CustomTypeKind.DOUBLE.ordinal()) {
-            builder.addStatement("$L.$L = $L.readDoubleCache($S)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey());
-        } else if (type == CustomTypeKind.STRING.ordinal()) {
-            builder.addStatement("$L.$L = $L.readCache($S)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey());
-        } else if (type == CustomTypeKind.PARCELABLE.ordinal()) {
-            builder.addStatement("$L.$L = $L.readCache($S,  $T.class)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey(),
-                    cacheVariable.getTypeMirror());
-        } else if (type == CustomTypeKind.OBJECT.ordinal()) {
-            builder.addStatement("$L.$L = $L.readCache($S,  $T.class)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey(),
-                    cacheVariable.getTypeMirror());
-        }else if (type == CustomTypeKind.LIST.ordinal()) {
-            builder.addStatement("$L.$L = $L.readListCache($S,  $T.class)",
-                    cacheMeta.getClsName().toLowerCase(),
-                    cacheVariable.getName().toString(),
-                    DISKCACHE,
-                    cacheVariable.getKey(),
-                    cacheVariable.getTypeArgs().get(0));
         }
 
         return builder;

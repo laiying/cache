@@ -15,7 +15,5 @@ public enum CustomTypeKind {
     // Other type
     STRING,
     PARCELABLE,
-    LIST,
-    LIST_SUB,
     OBJECT
 }
