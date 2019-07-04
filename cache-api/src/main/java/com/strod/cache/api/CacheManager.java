@@ -26,16 +26,16 @@ public class CacheManager {
     }
 
     private CacheManager(Builder builder) {
-        this.mCacheDirName = builder.cacheDirName;
-        this.mCacheSize = builder.cacheSize;
-        this.mExpireTimeMode = builder.expireTimeMode;
-        this.mExpireTime = builder.expireTime;
+
+        if (builder.appContext == null){
+            throw new RuntimeException("must call new CacheManager.Builder().with(this).build() in application");
+        }
 
         mDiskCacheManager = new DiskCacheManager();
-        mDiskCacheManager.init(builder.appContext, builder.cacheDirName, builder.cacheSize, builder.expireTimeMode, builder.expireTime);
+        mDiskCacheManager.init(builder.appContext, builder.diskCacheDirName, builder.cacheSize, builder.expireTimeMode, builder.expireTime, builder.appVersion);
 
         mSharePrefersManager = new SharePrefersManager();
-        mSharePrefersManager.init(builder.appContext, builder.cacheDirName);
+        mSharePrefersManager.init(builder.appContext, builder.sharePrefsName);
     }
 
 
@@ -47,45 +47,43 @@ public class CacheManager {
         return mSharePrefersManager;
     }
 
-    /**
-     * content cache dir name
-     */
-    private static final String DEFAULT_CACHE_DIR = "ContentCache";
-    /**
-     * 10MB
-     */
-    private static final long DEFAULT_CACHE_SIZE = 10 * 1024 * 1024;
-    /**
-     * default cache expire time is 7 days
-     */
-    private static final long DEFAULT_CACHE_TIME = 7 * 24 * 60 * 60 * 1000;
-
-    private String mCacheDirName = DEFAULT_CACHE_DIR;
-    private long mCacheSize = DEFAULT_CACHE_SIZE;
-    private boolean mExpireTimeMode = false;
-    /**
-     * expire time
-     */
-    private long mExpireTime = DEFAULT_CACHE_TIME;
-
-
     public static class Builder{
+        /**
+         * content cache dir name
+         */
+        private static final String DEFAULT_CACHE_DIR = "ContentCache";
+        /**
+         * 10MB
+         */
+        private static final long DEFAULT_CACHE_SIZE = 10 * 1024 * 1024;
+        /**
+         * default cache expire time is 7 days
+         */
+        private static final long DEFAULT_CACHE_TIME = 7 * 24 * 60 * 60 * 1000;
 
         private Context appContext;
-        private String cacheDirName = DEFAULT_CACHE_DIR;
+        private String sharePrefsName = DEFAULT_CACHE_DIR;
+        private String diskCacheDirName = DEFAULT_CACHE_DIR;
         private long cacheSize = DEFAULT_CACHE_SIZE;
         private boolean expireTimeMode = false;
         private long expireTime = DEFAULT_CACHE_TIME;
+        private int appVersion = 1;
 
         public Builder with(Context appContext){
             this.appContext = appContext;
             return this;
         }
 
-        public Builder cacheDirName(String cacheDirName){
-            this.cacheDirName = cacheDirName;
+        public Builder sharePrefsName(String sharePrefsName){
+            this.sharePrefsName = sharePrefsName;
             return this;
         }
+
+        public Builder diskCacheDirName(String diskCacheDirName){
+            this.diskCacheDirName = diskCacheDirName;
+            return this;
+        }
+
         public Builder cacheSize(long cacheSize){
             this.cacheSize = cacheSize;
             return this;
@@ -96,6 +94,11 @@ public class CacheManager {
         }
         public Builder expireTime(long expireTime){
             this.expireTime = expireTime;
+            return this;
+        }
+
+        public Builder appVersion(int appVersion){
+            this.appVersion = appVersion;
             return this;
         }
 

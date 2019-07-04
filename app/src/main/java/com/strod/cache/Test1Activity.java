@@ -26,10 +26,10 @@ public class Test1Activity extends BaseCompatActivity implements View.OnClickLis
     private static final String TAG = "Test1Activity";
 
     //int
-    @Cacheable(key = "age", cacheType = Cacheable.CACHETYPE.SHARE_PREFS)
+    @Cacheable(key = "age", cacheType = Cacheable.CACHETYPE.SHARE_PREFS, rw = Cacheable.RW.READ_ONLY)
     protected int mAge;
 
-    @Cacheable(key = "diskAge", cacheType = Cacheable.CACHETYPE.DISK)
+    @Cacheable(key = "diskAge", cacheType = Cacheable.CACHETYPE.DISK, rw = Cacheable.RW.WRITE_ONLY)
     public int mdiskAge;
 
     //boolean

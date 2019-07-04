@@ -32,6 +32,13 @@ public @interface Cacheable {
         private OPTTYPE() {
         }
     }*/
+
+    public static enum RW{
+        READ_ONLY,
+        WRITE_ONLY,
+        ALL
+    }
+
     /**cache type, default is disk*/
     CACHETYPE cacheType() default CACHETYPE.DISK;
 
@@ -40,5 +47,8 @@ public @interface Cacheable {
 
     /**opt key, default is get*/
 //    OPTTYPE optType() default OPTTYPE.GET;
+
+    /**read or write*/
+    RW rw() default RW.ALL;
 
 }

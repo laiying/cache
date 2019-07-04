@@ -5,6 +5,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
+import com.strod.cache.annotation.Cacheable;
 import com.strod.cache.compiler.enums.CustomTypeKind;
 import com.strod.cache.compiler.utils.CacheConsts;
 
@@ -53,29 +54,35 @@ public class CachePoetImpl extends CachePoet{
             MethodSpec writeCache = null;
             int typeKind = cacheVariable.getTypeKind();
 
-
-            //read
-            MethodSpec.Builder readBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_READ+ cacheVariable.getName())
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(TypeName.VOID)
-                    .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
+            Cacheable.RW rw = cacheVariable.getRw();
+            if (rw == Cacheable.RW.READ_ONLY || rw == Cacheable.RW.ALL){
+                //read
+                MethodSpec.Builder readBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_READ+ cacheVariable.getName())
+                        .addModifiers(Modifier.PUBLIC)
+                        .returns(TypeName.VOID)
+                        .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
 //                        .addStatement("android.util.Log.d($S, $S)", mGenerateComplexClassName+ "$$CACHE", CacheConsts.CACHE_READ+ cacheVariable.getName());
-            buildReadStatetement(typeKind, readBuilder, cacheVariable);
-            readCache = readBuilder.build();
+                buildReadStatetement(typeKind, readBuilder, cacheVariable);
+                readCache = readBuilder.build();
 
-            //write
-            MethodSpec.Builder writeBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_WRITE+ cacheVariable.getName())
-                    .addModifiers(Modifier.PUBLIC)
-                    .returns(TypeName.VOID)
-                    .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
-            buildWriteStatetement(typeKind, writeBuilder, cacheVariable);
-            writeCache = writeBuilder.build();
+                readMethodSpecs.add(readCache);
+                methodSpecs.add(readCache);
+            }
 
-            readMethodSpecs.add(readCache);
-            writeMethodSpecs.add(writeCache);
+            if (rw == Cacheable.RW.WRITE_ONLY || rw == Cacheable.RW.ALL){
+                //write
+                MethodSpec.Builder writeBuilder = MethodSpec.methodBuilder(CacheConsts.CACHE_WRITE+ cacheVariable.getName())
+                        .addModifiers(Modifier.PUBLIC)
+                        .returns(TypeName.VOID)
+                        .addParameter(ClassName.get(cacheMeta.getPkgName(), cacheMeta.getClsName()), cacheMeta.getClsName().toLowerCase());
+                buildWriteStatetement(typeKind, writeBuilder, cacheVariable);
+                writeCache = writeBuilder.build();
 
-            methodSpecs.add(readCache);
-            methodSpecs.add(writeCache);
+
+                writeMethodSpecs.add(writeCache);
+                methodSpecs.add(writeCache);
+            }
+
         }
 
         //interface method

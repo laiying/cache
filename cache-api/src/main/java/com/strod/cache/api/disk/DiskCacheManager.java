@@ -37,13 +37,16 @@ public class DiskCacheManager implements ICache {
      */
     private long mExpireTime;
 
+    private int mAppVersion;
+
     private DiskLruCache mDiskLruCache = null;
 
-    public void init(Context context, String cacheDirName, long cacheSize, boolean expireTimeMode, long expireTime) {
+    public void init(Context context, String cacheDirName, long cacheSize, boolean expireTimeMode, long expireTime, int appVersion) {
         mCacheDirName = cacheDirName;
         mCacheSize = cacheSize;
         mExpireTimeMode = expireTimeMode;
         mExpireTime = expireTime;
+        mAppVersion = appVersion;
         createDiskCache(context);
     }
 
@@ -59,7 +62,7 @@ public class DiskCacheManager implements ICache {
                 if (!cacheDir.exists()) {
                     cacheDir.mkdirs();
                 }
-                mDiskLruCache = DiskLruCache.open(cacheDir, 1/*getAppVersion(context)*/, mExpireTimeMode ? 2 : 1, mCacheSize);
+                mDiskLruCache = DiskLruCache.open(cacheDir, mAppVersion/*getAppVersion(context)*/, mExpireTimeMode ? 2 : 1, mCacheSize);
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e(TAG, "create ContentCache error");

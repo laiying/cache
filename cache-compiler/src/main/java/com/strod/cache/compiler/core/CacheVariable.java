@@ -16,6 +16,7 @@ public class CacheVariable {
     private Element rawType;        // Raw type of cache
     private String key;             // Cache key
     private Cacheable.CACHETYPE cacheType;    // Cache type
+    private Cacheable.RW rw;        // cache read or write
 //    private Cacheable.OPTTYPE optType;
     private Name name;
     private TypeMirror typeMirror;
@@ -56,6 +57,14 @@ public class CacheVariable {
     public void setOptType(Cacheable.OPTTYPE optType) {
         this.optType = optType;
     }*/
+
+    public Cacheable.RW getRw() {
+        return rw;
+    }
+
+    public void setRw(Cacheable.RW rw) {
+        this.rw = rw;
+    }
 
     public Name getName() {
         return name;

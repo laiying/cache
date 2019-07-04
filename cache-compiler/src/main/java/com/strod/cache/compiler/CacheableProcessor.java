@@ -209,7 +209,7 @@ public class CacheableProcessor extends AbstractProcessor {
                     }
 
                     Cacheable cacheable = variableElement.getAnnotation(Cacheable.class);
-                    logger.info(String.format("cacheable key = %s  type = %s", cacheable.key(), cacheable.cacheType()));//key = hello  type = FILE
+                    logger.info(String.format("cacheable key = %s  type = %s rw = %s", cacheable.key(), cacheable.cacheType(), cacheable.rw()));//key = hello  type = FILE
 
                     CacheMeta cacheMeta = mCacheMetas.get(pkName+claName);
                     if (cacheMeta == null){
@@ -223,6 +223,7 @@ public class CacheableProcessor extends AbstractProcessor {
                     cacheVariable.setCacheType(cacheable.cacheType());
                     cacheVariable.setKey(cacheable.key());
 //                    cacheVariable.setOptType(cacheable.optType());
+                    cacheVariable.setRw(cacheable.rw());
                     cacheVariable.setName(name);
                     cacheVariable.setTypeMirror(typeMirror);
                     cacheVariable.setTypeKind(typeUtils.typeExchange(variableElement));
