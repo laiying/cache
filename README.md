@@ -41,8 +41,8 @@ android {
 dependencies {
     // 替换成最新版本, 需要注意的是api
     // 要与compiler匹配使用，均使用最新版可以保证兼容
-    api 'com.github.laiying.cache:cache-api:1.0.1'
-    annotationProcessor 'com.github.laiying.cache:cache-compiler:1.0.1'
+    api 'com.github.laiying.cache:cache-api:1.0.2'
+    annotationProcessor 'com.github.laiying.cache:cache-compiler:1.0.2'
     ...
 }
 
@@ -55,8 +55,13 @@ if (BuildConfig.DEBUG){
 
 //init cache
 new CacheManager.Builder()
-        .with(this)
-        .cacheDirName("Cache")
+        .with(this)//必须设置
+        .diskCacheDirName("diskCache")//可选,默认为"ContentCache";设置硬盘缓存文件夹的名字
+        .sharePrefsName("Cache")//可选,默认为"ContentCache";设置sharePrefs文件的名字
+        .cacheSize(20 * 1024 * 1024)//可选,默认为10MB;设置硬盘缓存大小
+        .expireTimeMode(true)//可选，默认为false;设置过期模式
+        .expireTime(7 * 24 * 60 * 60 * 1000)//可选，默认为7天;设置自动过期时间，必须expireTimeMode(true)生效
+        .appVersion(getAppVersion(this))//可选，默认为1;如果设置当前app versionCode，则升级版本时，硬盘缓存会清空
         .build();
 
 ```
@@ -69,11 +74,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private CacheBinder mCacheBinder;
 
-    //int
-    @Cacheable(key = "age", cacheType = Cacheable.CACHETYPE.SHARE_PREFS)
+    //int  (rw = Cacheable.RW.READ_ONLY: is mean that the mAge field in this activity was read cache at onCreate() only, cannot write cache at onDestory())
+    @Cacheable(key = "age", cacheType = Cacheable.CACHETYPE.SHARE_PREFS, rw = Cacheable.RW.READ_ONLY)
     protected int mAge;
-
-    @Cacheable(key = "diskAge", cacheType = Cacheable.CACHETYPE.DISK)
+    //int  (rw = Cacheable.WRITE_ONLY  : is mean that the mdiskAge field in this activity was write cache at onDestory() only, cannot read cache at onCreate())
+    @Cacheable(key = "diskAge", rw = Cacheable.RW.WRITE_ONLY)
     public int mdiskAge;
 
     //boolean

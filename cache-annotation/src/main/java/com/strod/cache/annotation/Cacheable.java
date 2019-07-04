@@ -33,9 +33,15 @@ public @interface Cacheable {
         }
     }*/
 
+    /**
+     * read or write
+     */
     public static enum RW{
+        /**read only*/
         READ_ONLY,
+        /**write only*/
         WRITE_ONLY,
+        /**read and write*/
         ALL
     }
 

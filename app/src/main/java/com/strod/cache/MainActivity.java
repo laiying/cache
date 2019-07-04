@@ -26,11 +26,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private CacheBinder mCacheBinder;
 
-    //int
-    @Cacheable(key = "age", cacheType = Cacheable.CACHETYPE.SHARE_PREFS)
+    //int  (rw = Cacheable.RW.READ_ONLY: is mean that the mAge field in this activity was read cache at onCreate() only, cannot write cache at onDestory())
+    @Cacheable(key = "age", cacheType = Cacheable.CACHETYPE.SHARE_PREFS, rw = Cacheable.RW.READ_ONLY)
     protected int mAge;
-
-    @Cacheable(key = "diskAge", cacheType = Cacheable.CACHETYPE.DISK)
+    //int  (rw = Cacheable.WRITE_ONLY  : is mean that the mdiskAge field in this activity was write cache at onDestory() only, cannot read cache at onCreate())
+    @Cacheable(key = "diskAge", rw = Cacheable.RW.WRITE_ONLY)
     public int mdiskAge;
 
     //boolean

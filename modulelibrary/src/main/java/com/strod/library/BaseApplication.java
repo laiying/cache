@@ -1,6 +1,9 @@
 package com.strod.library;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 
 import com.strod.cache.annotation.Cacheable;
 import com.strod.cache.api.CacheInject;
@@ -32,11 +35,26 @@ public class BaseApplication extends Application {
         }
         //init cache
         new CacheManager.Builder()
-                .with(this)
-                .cacheDirName("Cache")
+                .with(this)//必须设置
+                .diskCacheDirName("diskCache")//可选,默认为"ContentCache";设置硬盘缓存文件夹的名字
+                .sharePrefsName("Cache")//可选,默认为"ContentCache";设置sharePrefs文件的名字
+                .cacheSize(20 * 1024 * 1024)//可选,默认为10MB;设置硬盘缓存大小
+                .expireTimeMode(true)//可选，默认为false;设置过期模式
+                .expireTime(7 * 24 * 60 * 60 * 1000)//可选，默认为7天;设置自动过期时间，必须expireTimeMode(true)生效
+                .appVersion(getAppVersion(this))//可选，默认为1;如果设置当前app versionCode，则升级版本时，硬盘缓存会清空
                 .build();
 
         initTestData();
+    }
+
+    public int getAppVersion(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            return info.versionCode;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return 1;
     }
 
     /**
